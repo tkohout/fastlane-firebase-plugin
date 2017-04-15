@@ -1,22 +1,30 @@
 module Fastlane
   module Actions
-    class ListAction < Action
-      require 'security'
+    class DeleteClientAction < Action
       require 'pry'
+
 
       def self.run(params)
         manager = Firebase::Manager.new
-        # Login
+        #Login
         api = manager.login(params[:username])
 
-        # List projects
-        projects = api.project_list()
-        projects.each_with_index { |p, i| 
-          UI.message "#{i+1}. #{p["displayName"]}" 
-          p["clientSummary"].sort {|left, right| left["clientId"] <=> right["clientId"] }.each_with_index { |client, j|
-            UI.message "  - #{client["clientId"]} (#{client["displayName"]})" 
-          } 
-        }
+        #Select project
+        project = manager.select_project(params[:project_number])
+
+        #Select project
+        client = manager.select_client(project, params[:client_id])
+
+        #Confirm
+        if !params[:force] then
+          UI.error "Caution, this is a permanent action. Deleting your app will delete the corresponding Analytics data, but not your app's API keys or OAuth clients."
+          UI.confirm "Are you sure to delete #{client["clientId"]} (#{client["displayName"]})?"
+        end
+
+        #Delete
+        api.delete_client(project["projectNumber"], client["clientId"])
+
+        UI.success "Successfuly deleted #{client["clientId"]}"
       end
 
       def self.description
@@ -45,7 +53,15 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :project_number,
                                   env_name: "FIREBASE_PROJECT_NUMBER",
                                description: "Project number",
-                                  optional: true)
+                                  optional: true),
+          FastlaneCore::ConfigItem.new(key: :client_id,
+                                  env_name: "FIREBASE_CLIENT_ID",
+                               description: "Client ID to be deleted",
+                                  optional: true),
+          FastlaneCore::ConfigItem.new(key: :force,
+                                  env_name: "FIREBASE_FORCE",
+                               description: "Force delete",
+                                  default_value: false)
         ]
       end
 

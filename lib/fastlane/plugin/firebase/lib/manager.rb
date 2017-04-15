@@ -41,7 +41,8 @@ module Fastlane
       end
 
       def select_client(project, client_id)
-      	clients = project["clientSummary"]
+      	clients = project["clientSummary"].sort {|left, right| left["clientId"] <=> right["clientId"] }
+
       	if client = clients.select {|c| c["clientId"] == client_id }.first then
       		client
       	else

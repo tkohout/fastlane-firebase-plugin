@@ -98,17 +98,20 @@ module Fastlane
 					elsif method == :post then
 						headers['Content-Type'] = 'application/json'
 						page = @agent.post("#{@sdk_url}#{path}?key=#{@api_key}", parameters.to_json, headers.merge(@authorization_headers))
+					elsif method == :delete then
+						page = @agent.delete("#{@sdk_url}#{path}?key=#{@api_key}", parameters, headers.merge(@authorization_headers))
 					end
 
 					JSON.parse(page.body)
 
 					rescue Mechanize::ResponseCodeError => e
-						if e.response_code == "400" then
+						code = e.response_code.to_i
+						if code >= 400 && code < 500 then
 							if body = JSON.parse(e.page.body) then
 								raise BadRequestError, body["error"]["message"]
 							end
 						end
-						raise
+						UI.crash! e.page.body
 					end
 			end
 
@@ -120,15 +123,23 @@ module Fastlane
 				projects
 			end
 
-			def add_client( project_number, bundle_id, app_name, ios_appstore_id )
+			def add_client(project_number, type, bundle_id, app_name, ios_appstore_id )
 				parameters = {
 					"requestHeader" => { "clientVersion" => "FIREBASE" },
-					"iosData" => {
-							"bundleId" => bundle_id,
-							"iosAppStoreId" => ios_appstore_id || ""
-					},
 					"displayName" => app_name || ""
 				}
+
+				case type
+					when :ios
+						parameters["iosData"] = {
+							"bundleId" => bundle_id,
+							"iosAppStoreId" => ios_appstore_id || ""
+						}
+					when :android
+						parameters["androidData"] = {
+							"packageName" => bundle_id
+						}
+				end
 
 				json = request_json("v1/projects/#{project_number}/clients", :post, parameters)
 				if client = json["client"] then
@@ -137,6 +148,10 @@ module Fastlane
 				else
 					UI.error "Client could not be added"
 				end
+			end
+
+			def delete_client(project_number, client_id)
+				json = request_json("v1/projects/#{project_number}/clients/#{client_id}", :delete)
 			end
 
 			def upload_certificate(project_number, client_id, type, certificate_value, certificate_password)

@@ -39,6 +39,11 @@ fastlane test_list
 fastlane test_add_client
 ```
 
+### test_delete_client
+```
+fastlane test_delete_client
+```
+
 ### test_upload_certificate
 ```
 fastlane test_upload_certificate

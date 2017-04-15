@@ -13,12 +13,14 @@ module Fastlane
         project = manager.select_project(params[:project_number])
 
         # Client input
-        bundle_id = UI.input("Client bundle id:")
-        name = UI.input("Display name (optional):")
-        ios_appstore_id = UI.input("AppStore ID (optional): ")
+        type = params[:type].to_sym
+
+        bundle_id = params[:bundle_id]
+        name = params[:name]
+        appstore_id = params[:appstore_id]
 
         # Add client
-        client = api.add_client(project["projectNumber"], bundle_id, name, ios_appstore_id)
+        client = api.add_client(project["projectNumber"], type, bundle_id, name, appstore_id)
         
         if params[:download_config] then
           #Download config
@@ -63,6 +65,26 @@ module Fastlane
                                description: "Should download config for created client",
                                   optional: false,
                                   default_value: true),
+          FastlaneCore::ConfigItem.new(key: :type,
+                                  env_name: "FIREBASE_TYPE",
+                                  description: "Type of client (ios, android)",
+                                  verify_block: proc do |value|
+                                    types = [:ios, :android]
+                                    UI.user_error!("Type must be in #{types}") unless types.include?(value.to_sym)
+                                  end
+                               ),
+          FastlaneCore::ConfigItem.new(key: :bundle_id,
+                                  env_name: "FIREBASE_BUNDLE_ID",
+                               description: "Bundle ID (package name)",
+                                  optional: false),
+          FastlaneCore::ConfigItem.new(key: :name,
+                                  env_name: "FIREBASE_BUNDLE_ID",
+                               description: "Display name",
+                                  optional: true),
+          FastlaneCore::ConfigItem.new(key: :appstore_id,
+                                  env_name: "FIREBASE_APPSTORE_ID",
+                               description: "AppStore ID",
+                                  optional: true),
           FastlaneCore::ConfigItem.new(key: :output_path,
                                   env_name: "FIREBASE_OUTPUT_PATH",
                                description: "Path for the downloaded config",

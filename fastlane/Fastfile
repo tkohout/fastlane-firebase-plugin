@@ -6,6 +6,10 @@ lane :test_add_client do
   add_client username:"prasopes.kurmiptak@gmail.com"
 end
 
+lane :test_delete_client do
+  delete_client username:"prasopes.kurmiptak@gmail.com"
+end
+
 lane :test_upload_certificate do
   upload_certificate username:"prasopes.kurmiptak@gmail.com", p12_path:"testfiles/production_cz.ackee.enterprise.a4e.majales.beta.p12"
 end
