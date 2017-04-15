@@ -44,6 +44,11 @@ fastlane test_add_client
 fastlane test_upload_certificate
 ```
 
+### test_download_config
+```
+fastlane test_download_config
+```
+
 
 ----
 

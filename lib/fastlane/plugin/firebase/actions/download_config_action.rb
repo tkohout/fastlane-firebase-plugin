@@ -1,22 +1,27 @@
 module Fastlane
   module Actions
-    class ListAction < Action
-      require 'security'
-      require 'pry'
-
+    class DownloadConfigAction < Action
+      
       def self.run(params)
         manager = Firebase::Manager.new
+        
         # Login
         api = manager.login(params[:username])
 
-        # List projects
-        projects = api.project_list()
-        projects.each_with_index { |p, i| 
-          UI.message "#{i+1}. #{p["displayName"]}" 
-          p["clientSummary"].each_with_index { |client, j|
-            UI.message "  - #{client["clientId"]} (#{client["displayName"]})" 
-          } 
-        }
+        #Select project
+        project = manager.select_project(params[:project_number])
+        project_number = project["projectNumber"]
+
+        #Select client
+        client = manager.select_client(project, params[:client_id])
+        client_id = client["clientId"]
+
+        #Download
+        config = api.download_config_file(project_number, client_id)
+        path = File.join(params[:output_path], params[:output_name] || config.filename)
+        config.save(path)
+
+        UI.success "Successfuly saved config at #{path}"
       end
 
       def self.description
@@ -45,6 +50,19 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :project_number,
                                   env_name: "FIREBASE_PROJECT_NUMBER",
                                description: "Project number",
+                                  optional: true),
+          FastlaneCore::ConfigItem.new(key: :client_id,
+                                  env_name: "FIREBASE_CLIENT_ID",
+                               description: "Project client id",
+                                  optional: true),
+          FastlaneCore::ConfigItem.new(key: :output_path,
+                                  env_name: "FIREBASE_OUTPUT_PATH",
+                               description: "Path for the downloaded config",
+                                  optional: false,
+                                  default_value: "./"),
+          FastlaneCore::ConfigItem.new(key: :output_name,
+                                  env_name: "FIREBASE_OUTPUT_NAME",
+                               description: "Name of the downloaded file",
                                   optional: true)
         ]
       end

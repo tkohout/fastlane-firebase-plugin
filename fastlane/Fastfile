@@ -10,6 +10,10 @@ lane :test_upload_certificate do
   upload_certificate username:"prasopes.kurmiptak@gmail.com", p12_path:"testfiles/production_cz.ackee.enterprise.a4e.majales.beta.p12"
 end
 
+lane :test_download_config do
+  download_config username:"prasopes.kurmiptak@gmail.com"
+end
+
 # lane :test_list do
 #   firebase
 # end
