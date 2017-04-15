@@ -12,7 +12,6 @@ module Fastlane
 			require 'digest/sha1'
 			require 'json'
 			require 'cgi'
-			require 'pry'
 
 			def initialize(email, password)
 				@agent = Mechanize.new

@@ -2,9 +2,7 @@ module Fastlane
   module Actions
     class UploadCertificateAction < Action
       require 'security'
-      require 'pry'
-      require 'openssl'
-
+      
       def self.server_name
         "firebase.google.com"
       end

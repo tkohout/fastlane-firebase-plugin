@@ -2,8 +2,7 @@ module Fastlane
   module Actions
     class ListAction < Action
       require 'security'
-      require 'pry'
-
+      
       def self.run(params)
         manager = Firebase::Manager.new
         # Login

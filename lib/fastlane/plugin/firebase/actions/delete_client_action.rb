@@ -1,9 +1,7 @@
 module Fastlane
   module Actions
     class DeleteClientAction < Action
-      require 'pry'
-
-
+      
       def self.run(params)
         manager = Firebase::Manager.new
         #Login
