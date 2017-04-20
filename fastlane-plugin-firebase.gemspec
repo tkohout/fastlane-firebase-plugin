@@ -10,8 +10,8 @@ Gem::Specification.new do |spec|
   spec.author        = 'Tomas Kohout'
   spec.email         = 'email@tomaskohout.cz'
 
-  spec.summary       = 'An unofficial tool to access Firebase'
-  # spec.homepage      = "https://github.com/<GITHUB_USERNAME>/fastlane-plugin-firebase"
+  spec.summary       = 'Unofficial tool to access Firebase project settings'
+  spec.homepage      = "https://github.com/tkohout/fastlane-firebase-plugin"
   spec.license       = "MIT"
 
   spec.files         = Dir["lib/**/*"] + %w[README.md LICENSE]
