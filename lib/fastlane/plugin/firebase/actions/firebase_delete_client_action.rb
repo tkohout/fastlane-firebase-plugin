@@ -1,27 +1,28 @@
 module Fastlane
   module Actions
-    class DownloadConfigAction < Action
+    class FirebaseDeleteClientAction < Action
       
       def self.run(params)
         manager = Firebase::Manager.new
-        
-        # Login
+        #Login
         api = manager.login(params[:username])
 
         #Select project
         project = manager.select_project(params[:project_number])
-        project_number = project["projectNumber"]
 
-        #Select client
+        #Select project
         client = manager.select_client(project, params[:client_id])
-        client_id = client["clientId"]
 
-        #Download
-        config = api.download_config_file(project_number, client_id)
-        path = File.join(params[:output_path], params[:output_name] || config.filename)
-        config.save(path)
+        #Confirm
+        if !params[:force] then
+          UI.error "Caution, this is a permanent action. Deleting your app will delete the corresponding Analytics data, but not your app's API keys or OAuth clients."
+          UI.confirm "Are you sure to delete #{client["clientId"]} (#{client["displayName"]})?"
+        end
 
-        UI.success "Successfuly saved config at #{path}"
+        #Delete
+        api.delete_client(project["projectNumber"], client["clientId"])
+
+        UI.success "Successfuly deleted #{client["clientId"]}"
       end
 
       def self.description
@@ -53,17 +54,12 @@ module Fastlane
                                   optional: true),
           FastlaneCore::ConfigItem.new(key: :client_id,
                                   env_name: "FIREBASE_CLIENT_ID",
-                               description: "Project client id",
+                               description: "Client ID to be deleted",
                                   optional: true),
-          FastlaneCore::ConfigItem.new(key: :output_path,
-                                  env_name: "FIREBASE_OUTPUT_PATH",
-                               description: "Path for the downloaded config",
-                                  optional: false,
-                                  default_value: "./"),
-          FastlaneCore::ConfigItem.new(key: :output_name,
-                                  env_name: "FIREBASE_OUTPUT_NAME",
-                               description: "Name of the downloaded file",
-                                  optional: true)
+          FastlaneCore::ConfigItem.new(key: :force,
+                                  env_name: "FIREBASE_FORCE",
+                               description: "Force delete",
+                                  default_value: false)
         ]
       end
 

@@ -1,6 +1,6 @@
 module Fastlane
   module Actions
-    class UploadCertificateAction < Action
+    class FirebaseUploadCertificateAction < Action
       require 'security'
       
       def self.server_name

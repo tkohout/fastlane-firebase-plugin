@@ -1,34 +1,27 @@
 module Fastlane
   module Actions
-    class AddClientAction < Action
+    class FirebaseDownloadConfigAction < Action
       
       def self.run(params)
         manager = Firebase::Manager.new
-        #Login
+        
+        # Login
         api = manager.login(params[:username])
 
         #Select project
         project = manager.select_project(params[:project_number])
+        project_number = project["projectNumber"]
 
-        # Client input
-        type = params[:type].to_sym
+        #Select client
+        client = manager.select_client(project, params[:client_id])
+        client_id = client["clientId"]
 
-        bundle_id = params[:bundle_id]
-        name = params[:name]
-        appstore_id = params[:appstore_id]
+        #Download
+        config = api.download_config_file(project_number, client_id)
+        path = File.join(params[:output_path], params[:output_name] || config.filename)
+        config.save(path)
 
-        # Add client
-        client = api.add_client(project["projectNumber"], type, bundle_id, name, appstore_id)
-        
-        if params[:download_config] then
-          #Download config
-          config = api.download_config_file(project["projectNumber"], client["clientId"])
-          path = File.join(params[:output_path], params[:output_name] || config.filename)
-          config.save(path)
-
-          UI.success "Successfuly saved config at #{path}"
-        end
-
+        UI.success "Successfuly saved config at #{path}"
       end
 
       def self.description
@@ -58,30 +51,9 @@ module Fastlane
                                   env_name: "FIREBASE_PROJECT_NUMBER",
                                description: "Project number",
                                   optional: true),
-          FastlaneCore::ConfigItem.new(key: :download_config,
-                                  env_name: "FIREBASE_DOWNLOAD_CONFIG",
-                               description: "Should download config for created client",
-                                  optional: false,
-                                  default_value: true),
-          FastlaneCore::ConfigItem.new(key: :type,
-                                  env_name: "FIREBASE_TYPE",
-                                  description: "Type of client (ios, android)",
-                                  verify_block: proc do |value|
-                                    types = [:ios, :android]
-                                    UI.user_error!("Type must be in #{types}") unless types.include?(value.to_sym)
-                                  end
-                               ),
-          FastlaneCore::ConfigItem.new(key: :bundle_id,
-                                  env_name: "FIREBASE_BUNDLE_ID",
-                               description: "Bundle ID (package name)",
-                                  optional: false),
-          FastlaneCore::ConfigItem.new(key: :name,
-                                  env_name: "FIREBASE_BUNDLE_ID",
-                               description: "Display name",
-                                  optional: true),
-          FastlaneCore::ConfigItem.new(key: :appstore_id,
-                                  env_name: "FIREBASE_APPSTORE_ID",
-                               description: "AppStore ID",
+          FastlaneCore::ConfigItem.new(key: :client_id,
+                                  env_name: "FIREBASE_CLIENT_ID",
+                               description: "Project client id",
                                   optional: true),
           FastlaneCore::ConfigItem.new(key: :output_path,
                                   env_name: "FIREBASE_OUTPUT_PATH",
