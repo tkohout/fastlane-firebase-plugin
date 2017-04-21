@@ -19,7 +19,7 @@ module Fastlane
         #Download
         config = api.download_config_file(project_number, client_id)
         path = File.join(params[:output_path], params[:output_name] || config.filename)
-        config.save(path)
+        config.save!(path)
 
         UI.success "Successfuly saved config at #{path}"
       end

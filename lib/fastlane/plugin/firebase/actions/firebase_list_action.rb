@@ -10,8 +10,9 @@ module Fastlane
 
         # List projects
         projects = api.project_list()
+       
         projects.each_with_index { |p, i| 
-          UI.message "#{i+1}. #{p["displayName"]}" 
+          UI.message "#{i+1}. #{p["displayName"]} (#{p["projectNumber"]})" 
           p["clientSummary"].sort {|left, right| left["clientId"] <=> right["clientId"] }.each_with_index { |client, j|
             UI.message "  - #{client["clientId"]} (#{client["displayName"]})" 
           } 

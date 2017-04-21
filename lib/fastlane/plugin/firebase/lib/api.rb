@@ -6,6 +6,11 @@ module Fastlane
 			end
 
 			class BadRequestError < StandardError
+				attr_reader :code
+ 				def initialize(msg, code)
+			    @code = code
+			    super(msg)
+			  end
 			end
 
 			require 'mechanize'
@@ -107,7 +112,7 @@ module Fastlane
 						code = e.response_code.to_i
 						if code >= 400 && code < 500 then
 							if body = JSON.parse(e.page.body) then
-								raise BadRequestError, body["error"]["message"]
+								raise BadRequestError.new(body["error"]["message"], code)
 							end
 						end
 						UI.crash! e.page.body

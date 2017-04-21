@@ -11,7 +11,7 @@ lane :test_delete_client do
 end
 
 lane :test_upload_certificate do
-  firebase_upload_certificate
+  firebase_upload_certificate(type: "development")
 end
 
 lane :test_download_config do

@@ -17,14 +17,28 @@ module Fastlane
         name = params[:name]
         appstore_id = params[:appstore_id]
 
+        begin
         # Add client
         client = api.add_client(project["projectNumber"], type, bundle_id, name, appstore_id)
-        
+        rescue Firebase::Api::BadRequestError => e 
+          if e.code == 409 then
+            client = project["clientSummary"].select { |client| client["clientId"] == "#{type}:#{bundle_id}" }.first
+            if client then
+              UI.success "Client already exists, skipping ..."
+            else
+              raise
+            end
+          else 
+            raise
+          end
+        end
+
+
         if params[:download_config] then
           #Download config
           config = api.download_config_file(project["projectNumber"], client["clientId"])
           path = File.join(params[:output_path], params[:output_name] || config.filename)
-          config.save(path)
+          config.save!(path)
 
           UI.success "Successfuly saved config at #{path}"
         end
@@ -62,6 +76,7 @@ module Fastlane
                                   env_name: "FIREBASE_DOWNLOAD_CONFIG",
                                description: "Should download config for created client",
                                   optional: false,
+                                  is_string: false,
                                   default_value: true),
           FastlaneCore::ConfigItem.new(key: :type,
                                   env_name: "FIREBASE_TYPE",

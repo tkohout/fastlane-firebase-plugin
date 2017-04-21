@@ -24,7 +24,7 @@ module Fastlane
         client_id = client["clientId"]
 
         #Select certificate type
-        type = UI.select("Select type:", [:development, :production])
+        type = params[:type].to_sym # || UI.select("Select type:", ["development", "production"])).to_sym
 
         #Base64 certificate
         certificate_value = Base64.encode64(File.open(p12_path, "rb").read).delete!("\n")
@@ -76,7 +76,10 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :p12_path,
                                   env_name: "FIREBASE_P12PATH",
                                description: "Path to certificate",
-                                  optional: false),
+                                  optional: false,
+                              verify_block: proc do |value|
+                                      UI.user_error! "Inserted value is not file - #{value}" unless File.exists? value
+                                  end),
           FastlaneCore::ConfigItem.new(key: :p12_password,
                                   env_name: "FIREBASE_PASSWORD",
                                description: "Password to the certicate",
@@ -88,7 +91,10 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :client_id,
                                   env_name: "FIREBASE_CLIENT_ID",
                                description: "Project client id",
-                                  optional: true)
+                                  optional: true),
+          FastlaneCore::ConfigItem.new(key: :type,
+                                  env_name: "FIREBASE_TYPE",
+                               description: "Type of certificate (development, production)")
         ]
       end
 
