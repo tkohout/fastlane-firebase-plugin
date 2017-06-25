@@ -13,7 +13,8 @@ module Fastlane
        
         projects.each_with_index { |p, i| 
           UI.message "#{i+1}. #{p["displayName"]} (#{p["projectNumber"]})" 
-          p["clientSummary"].sort {|left, right| left["clientId"] <=> right["clientId"] }.each_with_index { |client, j|
+          clients = p["clientSummary"] || []
+          clients.sort {|left, right| left["clientId"] <=> right["clientId"] }.each_with_index { |client, j|
             UI.message "  - #{client["clientId"]} (#{client["displayName"]})" 
           } 
         }

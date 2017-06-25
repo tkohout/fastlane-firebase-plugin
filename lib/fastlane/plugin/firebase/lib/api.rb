@@ -122,7 +122,7 @@ module Fastlane
 			def project_list
 				UI.message "Retrieving project list"
 				json = request_json("v1/projects")
-				projects = json["project"]
+				projects = json["project"] || []
 				UI.success "Found #{projects.count} projects"
 				projects
 			end

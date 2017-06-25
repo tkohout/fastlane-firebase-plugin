@@ -39,6 +39,11 @@ module Fastlane
 
 			def select_project(project_number)
 				projects = @api.project_list()
+        if projects.count == 0 then
+          UI.user_error! "No projects exist under the account"
+          return
+        end
+
 				if project = projects.select {|p| p["projectNumber"] == project_number }.first then
 					project
 				else 
@@ -49,7 +54,12 @@ module Fastlane
       end
 
       def select_client(project, client_id)
-      	clients = project["clientSummary"].sort {|left, right| left["clientId"] <=> right["clientId"] }
+        if project["clientSummary"] == nil then
+          UI.user_error! "Project has no clients"
+          return
+        end
+
+        clients = (project["clientSummary"] || []).sort {|left, right| left["clientId"] <=> right["clientId"] }
 
       	if client = clients.select {|c| c["clientId"] == client_id }.first then
       		client
