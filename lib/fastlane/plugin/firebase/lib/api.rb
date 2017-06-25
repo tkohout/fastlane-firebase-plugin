@@ -45,21 +45,106 @@ module Fastlane
 
 				#Send
 				page = @agent.submit(google_form, google_form.buttons.first)
-				match = page.search("script").text.scan(/\\x22api-key\\x22:\\x22(.*?)\\x22/)
 				
+				while page do
+					if extract_api_key(page) then
+						UI.success "Successfuly logged in"
+						return true
+					else
+
+						if error = page.at("#errormsg_0_Passwd") then
+							message = error.text.strip
+						elsif page.xpath("//div[@class='captcha-img']").count > 0 then
+							page = captcha_challenge(page)
+							next
+						elsif page.form.action.include? "/signin/challenge/" then
+							page = signin_challenge(page)
+							next
+						else 
+							message = "Unknown error"
+						end
+						raise LoginError, "Login failed: #{message}"
+					end 
+
+					end
+			end
+
+			def extract_api_key(page) 
+				#Find api key in javascript
+				match = page.search("script").text.scan(/\\x22api-key\\x22:\\x22(.*?)\\x22/)
 				if match.count == 1 then
 					@api_key = match[0][0]
 					@authorization_headers = create_authorization_headers()
-					UI.success "Successfuly logged in"
-					true
-				else
-					if error = page.at("#errormsg_0_Passwd") then
-						message = error.text.strip
-					else
-						message = "Unknown error"
+					return true
+				end
+
+				return false
+			end
+
+			def captcha_challenge(page)
+				if UI.confirm "To proceed you need to fill in captcha. Do you want to download captcha image?" then
+					img_src = page.xpath("//div[@class='captcha-img']/img").attribute("src").value
+					image = @agent.get(img_src)
+					if image != nil then
+						UI.success "Captcha image downloaded"
+					else 
+						UI.crash! "Failed to download captcha image"
 					end
-					raise LoginError, "Login failed: #{message}"
-				end 
+
+					file = Tempfile.new(["firebase_captcha_image", ".jpg"])
+					path = file.path 
+					
+					image.save!(path)
+
+					UI.success "Captcha image saved at #{path}"
+
+					if UI.confirm "Preview image?" then 
+						if system("qlmanage -p #{path} >& /dev/null &") != true && system("open #{path} 2> /dev/null") != true then
+							UI.error("Unable to find program to preview the image, open it manually")
+						end
+					end
+
+					captcha = UI.input "Enter captcha (case insensitive):"
+					password = UI.password "Re-enter password:"
+
+					captcha_form = page.form()
+
+					captcha_form.logincaptcha = captcha
+					captcha_form.Passwd = password
+
+					page = @agent.submit(captcha_form, captcha_form.buttons.first)
+					return page
+				else 
+					return nil
+				end
+				
+			end
+			
+			def signin_challenge(page)
+				UI.header "Sign-in challenge"
+
+				form_id = "challenge"
+				form = page.form_with(:id => form_id)
+				type = (form["challengeType"] || "-1").to_i
+
+				# Two factor verification
+				if type == 9 then
+					div = page.at("##{form_id} div")
+					if div != nil then 
+						UI.important div.xpath("div[1]").text
+						UI.important div.xpath("div[2]").text
+					end
+					
+					code = UI.input "Enter code G-:"
+					form.Pin = code
+					page = @agent.submit(form, form.buttons.first)
+					return page
+				else 
+					html = page.at("##{form_id}").to_html
+					UI.user_error! "Unknown challenge type \n\n#{html}"
+				end
+
+				return nil
 			end
 
 			def generate_sapisid_hash(time, sapisid, origin) 
