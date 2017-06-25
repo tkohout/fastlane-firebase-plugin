@@ -17,7 +17,7 @@ module Fastlane
 			require 'digest/sha1'
 			require 'json'
 			require 'cgi'
-
+			
 			def initialize(email, password)
 				@agent = Mechanize.new
 				@base_url = "https://console.firebase.google.com"

@@ -1,31 +1,39 @@
 module Fastlane
   module Firebase
   	
+
 		class Manager
 			def server_name
         "firebase.google.com"
       end
 
-
-
 			def login(username)
 				item = Security::InternetPassword.find(server: server_name(), account: username)
-        password = item.password if item
+        keychain_password = item.password if item
 
+        password = keychain_password
         begin 
-          password = UI.input("Password for #{username}") unless password
+          password = UI.password("Password for #{username}") unless password
           
           #Api instance
           @api = Firebase::Api.new(username, password)
           
           #Store password
-          Security::InternetPassword.add(server_name(), username, password) unless item.password == password
+          Security::InternetPassword.add(server_name(), username, password) unless keychain_password == password
 
           @api
         rescue Firebase::Api::LoginError => e
-          password = nil
           UI.error e.message
-          retry
+
+          if UI.confirm "Do you want to re-enter your password?" then
+        	  password = nil
+            if keychain_password then
+              puts "Removing Keychain entry for user '#{username}'...".yellow
+              Security::InternetPassword.delete(server: server_name(), account: username)
+            end
+            keychain_password = nil
+            retry
+          end
         end
 			end
 
