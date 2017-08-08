@@ -14,6 +14,16 @@ fastlane add_plugin firebase
 
 An unofficial tool to access Firebase project settings. It allows you to create new clients (apps) and delete existing ones. It also allows to download config files (GoogleInfo.plist for ios and google-services.json for android) and upload push notification certificates (ios).
 
+Plugin also supports two-step verification! 
+
+:white_check_mark: Voice or text message
+
+:white_check_mark: Authenticator app
+
+:x: Google prompt
+
+:x: Security key
+
 ## Disclaimer
 **!! Important !!**
 
