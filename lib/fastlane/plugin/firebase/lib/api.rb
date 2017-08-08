@@ -1,7 +1,6 @@
 module Fastlane
   module Firebase
-  	
-		class Api 
+  	class Api 
 			class LoginError < StandardError 
 			end
 
@@ -17,7 +16,7 @@ module Fastlane
 			require 'digest/sha1'
 			require 'json'
 			require 'cgi'
-			
+		
 			def initialize(email, password)
 				@agent = Mechanize.new
 				@base_url = "https://console.firebase.google.com"
@@ -57,7 +56,7 @@ module Fastlane
 						elsif page.xpath("//div[@class='captcha-img']").count > 0 then
 							page = captcha_challenge(page)
 							next
-						elsif page.form.action.include? "/signin/challenge/" then
+						elsif page.form.action.include? "/signin/challenge" then
 							page = signin_challenge(page)
 							next
 						else 
@@ -127,19 +126,22 @@ module Fastlane
 				form = page.form_with(:id => form_id)
 				type = (form["challengeType"] || "-1").to_i
 
-				# Two factor verification
-				if type == 9 then
+				# Two factor verification SMS
+				if type == 9 || type == 6 then
 					div = page.at("##{form_id} div")
 					if div != nil then 
 						UI.important div.xpath("div[1]").text
 						UI.important div.xpath("div[2]").text
 					end
 					
-					code = UI.input "Enter code G-:"
+					prefix = type == 9 ? " G-" : ""
+					code = UI.input "Enter code#{prefix}:"
 					form.Pin = code
 					page = @agent.submit(form, form.buttons.first)
 					return page
-				else 
+				elsif type == 4 then 
+					UI.user_error! "Google prompt is not supported as a two-step verification"
+				else
 					html = page.at("##{form_id}").to_html
 					UI.user_error! "Unknown challenge type \n\n#{html}"
 				end
