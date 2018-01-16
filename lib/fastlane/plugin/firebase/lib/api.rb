@@ -273,6 +273,38 @@ module Fastlane
 					UI.crash! e.page.body
 				end
 			end
+
+			def add_team(project_number, bundle_id, team_id)
+				parameters = {
+					"iosTeamId" => team_id
+				}
+
+				json = request_json("v1/projects/#{project_number}/clients/ios:#{bundle_id}:setTeamId", :post, parameters)
+			end
+
+			def add_android_certificate(project_number, bundle_id, sha256)
+				parameters = {
+					"requestHeader" => { "clientVersion" => "FIREBASE" },
+					"projectNumber" => project_number,
+					"clientId" => "android:#{bundle_id}",
+					"androidCertificate" => {
+						"androidSha256Hash" => sha256
+					}
+				}
+
+				json = request_json("v1/projects/#{project_number}/clients/android:#{bundle_id}:addAndroidCertificate", :post, parameters)
+			end
+
+			def add_apple_store_id(project_number, bundle_id, store_id)
+				parameters = {
+					"requestHeader" => { "clientVersion" => "FIREBASE" },
+					"projectNumber" => project_number,
+					"clientId" => "android:#{bundle_id}",
+					iosAppStoreId: store_id
+				}
+
+				json = request_json("v1/projects/#{project_number}/clients/ios:#{bundle_id}:setAppStoreId", :post, parameters)
+			end
 		end
 	end
 end
