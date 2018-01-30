@@ -5,7 +5,7 @@ module Fastlane
       def self.run(params)
         manager = Firebase::Manager.new
         #Login
-        api = manager.login(params[:username])
+        api = manager.login(params[:username], params[:password])
 
         #Select project
         project = manager.select_project(params[:project_number])
@@ -16,9 +16,8 @@ module Fastlane
         bundle_id = params[:bundle_id]
         name = params[:name]
         appstore_id = params[:appstore_id]
-        store_id = params[:store_id]
 
-        client = api.add_apple_store_id(project["projectNumber"], bundle_id, store_id)
+        client = api.add_apple_store_id(project["projectNumber"], bundle_id, appstore_id)
 
         UI.success "Successfuly added apple store id of app #{bundle_id}"
       end
@@ -46,6 +45,11 @@ module Fastlane
                                   env_name: "FIREBASE_USERNAME",
                                description: "Username for your google account",
                                   optional: false),
+          FastlaneCore::ConfigItem.new(key: :password,
+                                  env_name: "FIREBASE_PASSWORD",
+                                 sensitive: true,
+                               description: "Password to your firebase account",
+                                  optional: true),
           FastlaneCore::ConfigItem.new(key: :project_number,
                                   env_name: "FIREBASE_PROJECT_NUMBER",
                                description: "Project number",
@@ -59,11 +63,7 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :type,
                                   env_name: "FIREBASE_TYPE",
                                   description: "Type of client (ios, android)",
-                                  verify_block: proc do |value|
-                                    types = [:ios, :android]
-                                    UI.user_error!("Type must be in #{types}") unless types.include?(value.to_sym)
-                                  end
-                               ),
+                                  optional: true),
           FastlaneCore::ConfigItem.new(key: :bundle_id,
                                   env_name: "FIREBASE_BUNDLE_ID",
                                description: "Bundle ID (package name)",
@@ -75,7 +75,7 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :appstore_id,
                                   env_name: "FIREBASE_APPSTORE_ID",
                                description: "AppStore ID",
-                                  optional: true),
+                                  optional: false),
           FastlaneCore::ConfigItem.new(key: :output_path,
                                   env_name: "FIREBASE_OUTPUT_PATH",
                                description: "Path for the downloaded config",
@@ -84,10 +84,6 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :output_name,
                                   env_name: "FIREBASE_OUTPUT_NAME",
                                description: "Name of the downloaded file",
-                                  optional: true),
-          FastlaneCore::ConfigItem.new(key: :store_id,
-                                  env_name: "APPLE_STORE_ID",
-                               description: "App Apple ID",
                                   optional: true)
         ]
       end

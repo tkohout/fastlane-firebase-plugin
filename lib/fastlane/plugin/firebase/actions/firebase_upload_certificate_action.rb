@@ -11,7 +11,7 @@ module Fastlane
         manager = Firebase::Manager.new
         
         # Login
-        api = manager.login(params[:username])
+        api = manager.login(params[:username], params[:password])
 
         p12_path = params[:p12_path]
 
@@ -73,6 +73,11 @@ module Fastlane
                                   env_name: "FIREBASE_USERNAME",
                                description: "Username for your google account",
                                   optional: false),
+          FastlaneCore::ConfigItem.new(key: :password,
+                                  env_name: "FIREBASE_PASSWORD",
+                                 sensitive: true,
+                               description: "Password to your firebase account",
+                                  optional: true),
           FastlaneCore::ConfigItem.new(key: :p12_path,
                                   env_name: "FIREBASE_P12PATH",
                                description: "Path to certificate",

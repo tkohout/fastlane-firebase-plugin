@@ -6,7 +6,7 @@ module Fastlane
       def self.run(params)
         manager = Firebase::Manager.new
         # Login
-        api = manager.login(params[:username])
+        api = manager.login(params[:username], params[:password])
 
         # List projects
         projects = api.project_list()
@@ -43,6 +43,11 @@ module Fastlane
                                   env_name: "FIREBASE_USERNAME",
                                description: "Username for your google account",
                                   optional: false),
+          FastlaneCore::ConfigItem.new(key: :password,
+                                  env_name: "FIREBASE_PASSWORD",
+                                 sensitive: true,
+                               description: "Password to your firebase account",
+                                  optional: true),
           FastlaneCore::ConfigItem.new(key: :project_number,
                                   env_name: "FIREBASE_PROJECT_NUMBER",
                                description: "Project number",

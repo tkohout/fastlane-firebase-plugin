@@ -5,7 +5,7 @@ module Fastlane
       def self.run(params)
         manager = Firebase::Manager.new
         #Login
-        api = manager.login(params[:username])
+        api = manager.login(params[:username], params[:password])
 
         #Select project
         project = manager.select_project(params[:project_number])
@@ -52,6 +52,11 @@ module Fastlane
                                   env_name: "FIREBASE_USERNAME",
                                description: "Username for your google account",
                                   optional: false),
+          FastlaneCore::ConfigItem.new(key: :password,
+                                  env_name: "FIREBASE_PASSWORD",
+                                 sensitive: true,
+                               description: "Password to your firebase account",
+                                  optional: true),
           FastlaneCore::ConfigItem.new(key: :project_number,
                                   env_name: "FIREBASE_PROJECT_NUMBER",
                                description: "Project number",
@@ -65,11 +70,7 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :type,
                                   env_name: "FIREBASE_TYPE",
                                   description: "Type of client (ios, android)",
-                                  verify_block: proc do |value|
-                                    types = [:ios, :android]
-                                    UI.user_error!("Type must be in #{types}") unless types.include?(value.to_sym)
-                                  end
-                               ),
+                                  optional: true),
           FastlaneCore::ConfigItem.new(key: :bundle_id,
                                   env_name: "FIREBASE_BUNDLE_ID",
                                description: "Bundle ID (package name)",
@@ -94,7 +95,7 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :sha256,
                                   env_name: "FIREBASE_SHA_256",
                                description: "SHA256 for android",
-                                  optional: true)
+                                  optional: false)
         ]
       end
 
