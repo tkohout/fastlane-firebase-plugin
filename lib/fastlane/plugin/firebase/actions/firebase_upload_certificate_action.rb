@@ -86,7 +86,7 @@ module Fastlane
                                       UI.user_error! "Inserted value is not file - #{value}" unless File.exists? value
                                   end),
           FastlaneCore::ConfigItem.new(key: :p12_password,
-                                  env_name: "FIREBASE_PASSWORD",
+                                  env_name: "FIREBASE_P12_PASSWORD",
                                description: "Password to the certicate",
                                   optional: true),
           FastlaneCore::ConfigItem.new(key: :project_number,
