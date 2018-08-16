@@ -28,23 +28,31 @@ module Fastlane
 
 			def login(email, password)
 				UI.message "Logging in to Google account #{email}"
+				begin
+					@agent.cookie_jar.load '.cookies.yml'
+					UI.message "Cookies found!"
 
-				page = @agent.get("#{@login_url}?passive=1209600&osid=1&continue=#{@base_url}/&followup=#{@base_url}/")
-				
-				#First step - email
-				google_form = page.form()
-				google_form.Email = email
+					page = @agent.get(@base_url)
+				rescue
+					UI.message "Cookies not found, try to login"
 
-				#Send
-				page = @agent.submit(google_form, google_form.buttons.first)
+					page = @agent.get("#{@login_url}?passive=1209600&osid=1&continue=#{@base_url}/&followup=#{@base_url}/")
 				
-				#Second step - password
-				google_form = page.form()
-				google_form.Passwd = password
+					#First step - email
+					google_form = page.form()
+					google_form.Email = email
 
-				#Send
-				page = @agent.submit(google_form, google_form.buttons.first)
-				
+					#Send
+					page = @agent.submit(google_form, google_form.buttons.first)
+					
+					#Second step - password
+					google_form = page.form()
+					google_form.Passwd = password
+
+					#Send
+					page = @agent.submit(google_form, google_form.buttons.first)
+				end
+
 				while page do
 					if extract_api_key(page) then
 						UI.success "Successfuly logged in"
@@ -159,6 +167,7 @@ module Fastlane
 			end
 
 			def create_authorization_headers 
+				@agent.cookie_jar.save_as '.cookies.yml', :session => true, :format => :yaml
 				cookie = @agent.cookie_jar.jar["google.com"]["/"]["SAPISID"]
 				sapisid = cookie.value
 				origin = @base_url
