@@ -28,13 +28,20 @@ module Fastlane
 
 			def login(email, password)
 				UI.message "Logging in to Google account #{email}"
+
+ 				# Load cookie from ENV into file if is set
+ 				if !ENV["FIREBASE_COOKIE"].nil? then
+ 					File.open('.cookies.yml', 'w') { |file| file.write(ENV["FIREBASE_COOKIE"]) }
+ 				end
+
+ 				# Try to load cookie from file
 				begin
 					@agent.cookie_jar.load '.cookies.yml'
 					UI.message "Cookies found!"
 
 					page = @agent.get(@base_url)
 				rescue
-					UI.message "Cookies not found, try to login"
+					UI.message "Cookies not found, trying to login"
 
 					page = @agent.get("#{@login_url}?passive=1209600&osid=1&continue=#{@base_url}/&followup=#{@base_url}/")
 				
