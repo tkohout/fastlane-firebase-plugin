@@ -275,6 +275,16 @@ module Fastlane
 				json = request_json("v1/projects/#{project_number}/clients/#{client_id}:setApnsCertificate", :post, parameters)
 			end
 
+			def upload_p8_certificate(project_number, client_id, type, certificate_value, key_code)
+
+				parameters = {
+						"keyId" => key_code,
+						"privateKey" => certificate_value 
+					}
+
+			  json = request_json("v1/projects/#{project_number}/clients/#{client_id}:setApnsAuthKey", :post, parameters)
+			end
+
 			def download_config_file(project_number, client_id)
 				
 				request = "[\"getArtifactRequest\",null,\"#{client_id}\",\"1\",\"#{project_number}\"]"
