@@ -24,6 +24,9 @@ Plugin also supports two-step verification!
 
 :x: Security key
 
+This plugin will eventually be deprecated in favor of the [fastlane-plugin-firebase-management](https://github.com/AckeeCZ/fastlane-plugin-firebase_management) that uses the new Firebase Management API once it supports all of the current features.
+
+
 ## Disclaimer
 **!! Important !!**
 
