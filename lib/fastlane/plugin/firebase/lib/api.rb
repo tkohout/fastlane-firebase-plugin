@@ -232,7 +232,7 @@ module Fastlane
 
 			def add_client(project_number, type, bundle_id, app_name, ios_appstore_id )
 				parameters = {
-					"requestHeader" => { "clientVersion" => "FIREBASE" },
+					"requestHeader" => { },
 					"displayName" => app_name || ""
 				}
 
@@ -244,7 +244,8 @@ module Fastlane
 						}
 					when :android
 						parameters["androidData"] = {
-							"packageName" => bundle_id
+							"packageName" => bundle_id,
+							"androidCertificateHash" => []
 						}
 				end
 
