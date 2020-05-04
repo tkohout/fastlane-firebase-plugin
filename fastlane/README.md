@@ -28,32 +28,56 @@ xcode-select --install
 </tr>
 </table>
 
-# Available Actions
-### test_list
+### google_api_key_list_allowed_bundle_ids
 ```
-fastlane test_list
+    google_api_key_list_allowed_bundle_ids(
+      project_number: "some:project-id",
+      api_key_id: "fd1d4e87-0ba5-4e2e-bacd-54d96b70befd",
+      type: 'ios',
+      username: ENV['GOOGLE_USERNAME'],
+      password: ENV['GOOGLE_PASSWORD'],
+    )
 ```
-
-### test_add_client
 ```
-fastlane test_add_client
-```
-
-### test_delete_client
-```
-fastlane test_delete_client
-```
-
-### test_upload_certificate
-```
-fastlane test_upload_certificate
-```
-
-### test_download_config
-```
-fastlane test_download_config
+    google_api_key_list_allowed_bundle_ids(
+      project_number: "some:project-id",
+      api_key_id: "fd1d4e87-0ba5-4e2e-bacd-54d96b70befd",
+      type: 'android',
+      username: ENV['GOOGLE_USERNAME'],
+      password: ENV['GOOGLE_PASSWORD'],
+    )
 ```
 
+### google_api_key_add_allowed_bundle_ids
+```
+    google_api_key_add_allowed_bundle_ids(
+      project_number: "some:project-id",
+      api_key_id: "fd1d4e87-0ba5-4e2e-bacd-54d96b70befd",
+      type: 'ios',
+      bundle_id: 'com.example.test',
+      username: ENV['GOOGLE_USERNAME'],
+      password: ENV['GOOGLE_PASSWORD'],
+    )
+    google_api_key_add_allowed_bundle_ids(
+      project_number: "some:project-id",
+      api_key_id: "fd1d4e87-0ba5-4e2e-bacd-54d96b70befd",
+      type: 'android',
+      bundle_id: 'com.example.test',
+      fingerprint: '2a:ae:6c:35:c9:4f:cf:b4:15:db:e9:5f:40:8b:9c:e9:1e:e8:46:ed',
+      username: ENV['GOOGLE_USERNAME'],
+      password: ENV['GOOGLE_PASSWORD'],
+    )
+```
+
+### firebase_get_server_key
+
+```
+    firebase_get_server_key(
+      project_number: "project-name-or-number",
+      username: ENV['GOOGLE_USERNAME'],
+      password: ENV['GOOGLE_PASSWORD'],
+    )
+```
 
 ----
 

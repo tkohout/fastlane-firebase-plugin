@@ -22,6 +22,7 @@ module Fastlane
 				@base_url = "https://console.firebase.google.com"
 				@sdk_url = "https://mobilesdk-pa.clients6.google.com/"
 				@login_url = "https://accounts.google.com/ServiceLogin"
+        @apikey_url = "https://apikeys.clients6.google.com/"
 
 				login(email, password)
 			end
@@ -197,6 +198,38 @@ module Fastlane
 				json_headers
 			end
 
+			def apikey_request_json(path, method = :get, parameters = Hash.new, headers = Hash.new, query = '')
+					begin
+					if method == :get then
+						parameters["key"] = @api_key
+						page = @agent.get("#{@apikey_url}#{path}", parameters, nil, headers.merge(@authorization_headers))
+					elsif method == :post then
+						headers['Content-Type'] = 'application/json'
+            puts "#{@apikey_url}#{path}?key=#{@api_key}"
+            puts parameters.to_json
+						page = @agent.post("#{@apikey_url}#{path}?key=#{@api_key}", parameters.to_json, headers.merge(@authorization_headers))
+					elsif method == :patch then
+						headers['Content-Type'] = 'application/json'
+						page = @agent.request_with_entity(
+              'patch', "#{@apikey_url}#{path}?key=#{@api_key}&#{query}", parameters.to_json, headers.merge(@authorization_headers)
+            )
+					elsif method == :delete then
+						page = @agent.delete("#{@apikey_url}#{path}?key=#{@api_key}", parameters, headers.merge(@authorization_headers))
+					end
+
+					JSON.parse(page.body)
+
+					rescue Mechanize::ResponseCodeError => e
+						code = e.response_code.to_i
+						if code >= 400 && code < 500 then
+							if body = JSON.parse(e.page.body) then
+								raise BadRequestError.new(body["error"]["message"], code)
+							end
+						end
+						UI.crash! e.page.body
+					end
+			end
+
 			def request_json(path, method = :get, parameters = Hash.new, headers = Hash.new)
 					begin
 					if method == :get then
@@ -332,6 +365,21 @@ module Fastlane
 
 				json = request_json("v1/projects/#{project_number}/clients/ios:#{bundle_id}:setAppStoreId", :post, parameters)
 			end
+
+      def get_apikey(project_number, api_key)
+				json = apikey_request_json("v1/projects/#{project_number}/apiKeys/#{api_key}", :get)
+      end
+
+      def update_apikey(project_number, api_key, update_mask, payload)
+        json = apikey_request_json(
+          "v1/projects/#{project_number}/apiKeys/#{api_key}", :patch, payload, Hash.new, "updateMask=#{update_mask}"
+        )
+      end
+
+      def get_server_key(project_number) 
+				parameters = {}
+				json = request_json("v1/projects/#{project_number}:getIidTokens", :post, parameters)
+      end
 		end
 	end
 end

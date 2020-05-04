@@ -46,6 +46,8 @@ module Fastlane
 
 				if project = projects.select {|p| p["projectNumber"] == project_number }.first then
 					project
+				elsif project = projects.select {|p| p["displayName"] == project_number }.first then
+					project
 				else 
         	options = projects.map { |p| p["displayName"] }
         	index = select_index("Select project:", options)
