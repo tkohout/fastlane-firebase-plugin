@@ -1,23 +1,22 @@
 module Fastlane
   module Actions
-    class FirebaseListAction < Action
-      require 'security'
-      
+    class GoogleApiKeyListAllowedBundleIdsAction < Action
       def self.run(params)
         manager = Firebase::Manager.new
         # Login
         api = manager.login(params[:username], params[:password])
 
-        # List projects
-        projects = api.project_list()
-       
-        projects.each_with_index { |p, i| 
-          UI.message "#{i+1}. #{p["displayName"]} (#{p["projectNumber"]})" 
-          clients = p["clientSummary"] || []
-          clients.sort {|left, right| left["clientId"] <=> right["clientId"] }.each_with_index { |client, j|
-            UI.message "  - #{client["clientId"]} (#{client["displayName"]})" 
-          } 
-        }
+        key_info = api.get_apikey(params[:project_number], params[:api_key_id])
+        case params[:type]
+        when 'ios'
+          key_info['iosKeyDetails']['allowedBundleIds'].each do |bundle|
+            UI.message bundle
+          end
+        when 'android'
+          key_info['androidKeyDetails']['allowedApplications'].each do |app|
+            UI.message app['packageName']
+          end
+        end
       end
 
       def self.description
@@ -25,7 +24,7 @@ module Fastlane
       end
 
       def self.authors
-        ["Tomas Kohout"]
+        ["Jonathan Lewis"]
       end
 
       def self.return_value
@@ -34,7 +33,7 @@ module Fastlane
 
       def self.details
         # Optional:
-        "Firebase helps you list your projects, create applications, download configuration files and more..."
+        "Get iOS Bundle IDs allowed to access an API Key"
       end
 
       def self.available_options
@@ -49,17 +48,21 @@ module Fastlane
                                description: "Password to your firebase account",
                                   optional: true),
           FastlaneCore::ConfigItem.new(key: :project_number,
-                                  env_name: "FIREBASE_PROJECT_NUMBER",
+                                  env_name: "GOOGLE_PROJECT_NUMBER",
                                description: "Project number",
-                                  optional: true)
+                                  optional: false),
+          FastlaneCore::ConfigItem.new(key: :api_key_id,
+                                  env_name: "GOOGLE_API_KEY_ID",
+                               description: "API Key ID to retrieve details for",
+                                  optional: false),
+          FastlaneCore::ConfigItem.new(key: :type,
+                               description: "ios or android",
+                                  optional: false)
+ 
         ]
       end
 
       def self.is_supported?(platform)
-        # Adjust this if your plugin only works for a particular platform (iOS vs. Android, for example)
-        # See: https://github.com/fastlane/fastlane/blob/master/fastlane/docs/Platforms.md
-        #
-        # [:ios, :mac, :android].include?(platform)
         true
       end
     end

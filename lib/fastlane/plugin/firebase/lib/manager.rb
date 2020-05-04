@@ -7,11 +7,11 @@ module Fastlane
         "firebase.google.com"
       end
 
-			def login(username)
+			def login(username, password = nil)
 				item = Security::InternetPassword.find(server: server_name(), account: username)
         keychain_password = item.password if item
 
-        password = keychain_password
+        password = password || keychain_password
         begin 
           password = UI.password("Password for #{username}") unless password
           
@@ -45,6 +45,8 @@ module Fastlane
         end
 
 				if project = projects.select {|p| p["projectNumber"] == project_number }.first then
+					project
+				elsif project = projects.select {|p| p["displayName"] == project_number }.first then
 					project
 				else 
         	options = projects.map { |p| p["displayName"] }

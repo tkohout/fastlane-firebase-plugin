@@ -1,6 +1,6 @@
 module Fastlane
   module Actions
-    class FirebaseAddClientAction < Action
+    class FirebaseGetServerKeyAction < Action
       
       def self.run(params)
         manager = Firebase::Manager.new
@@ -10,39 +10,10 @@ module Fastlane
         #Select project
         project = manager.select_project(params[:project_number])
 
-        # Client input
-        type = params[:type].to_sym
+        # Add  team
+        server_key = api.get_server_key(project["projectNumber"])
 
-        bundle_id = params[:bundle_id]
-        name = params[:name]
-        appstore_id = params[:appstore_id]
-
-        begin
-        # Add client
-        client = api.add_client(project["projectNumber"], type, bundle_id, name, appstore_id)
-        rescue Firebase::Api::BadRequestError => e 
-          if e.code == 409 then
-            client = project["clientSummary"].select { |client| client["clientId"] == "#{type}:#{bundle_id}" }.first
-            if client then
-              UI.success "Client already exists, skipping ..."
-            else
-              raise
-            end
-          else 
-            raise
-          end
-        end
-
-
-        if params[:download_config] then
-          #Download config
-          config = api.download_config_file(project["projectNumber"], client["clientId"])
-          path = File.join(params[:output_path], params[:output_name] || config.filename)
-          config.save!(path)
-
-          UI.success "Successfuly saved config at #{path}"
-        end
-
+        UI.success "Successfuly found of server key #{server_key['token'][0]['token']}"
       end
 
       def self.description
@@ -50,7 +21,7 @@ module Fastlane
       end
 
       def self.authors
-        ["Tomas Kohout"]
+        ["Jonathan Lewis"]
       end
 
       def self.return_value
@@ -86,11 +57,7 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :type,
                                   env_name: "FIREBASE_TYPE",
                                   description: "Type of client (ios, android)",
-                                  verify_block: proc do |value|
-                                    types = [:ios, :android]
-                                    UI.user_error!("Type must be in #{types}") unless types.include?(value.to_sym)
-                                  end
-                               ),
+                                  optional: true),
           FastlaneCore::ConfigItem.new(key: :bundle_id,
                                   env_name: "FIREBASE_BUNDLE_ID",
                                description: "Bundle ID (package name)",
@@ -111,7 +78,11 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :output_name,
                                   env_name: "FIREBASE_OUTPUT_NAME",
                                description: "Name of the downloaded file",
-                                  optional: true)
+                                  optional: true),
+          FastlaneCore::ConfigItem.new(key: :team_id,
+                                  env_name: "FIREBASE_TEAM_ID",
+                               description: "ID of the Apple Team",
+                                  optional: false)
         ]
       end
 

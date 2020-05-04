@@ -22,6 +22,7 @@ module Fastlane
 				@base_url = "https://console.firebase.google.com"
 				@sdk_url = "https://mobilesdk-pa.clients6.google.com/"
 				@login_url = "https://accounts.google.com/ServiceLogin"
+        @apikey_url = "https://apikeys.clients6.google.com/"
 
 				login(email, password)
 			end
@@ -29,22 +30,37 @@ module Fastlane
 			def login(email, password)
 				UI.message "Logging in to Google account #{email}"
 
-				page = @agent.get("#{@login_url}?passive=1209600&osid=1&continue=#{@base_url}/&followup=#{@base_url}/")
-				
-				#First step - email
-				google_form = page.form()
-				google_form.Email = email
+ 				# Load cookie from ENV into file if is set
+ 				if !ENV["FIREBASE_COOKIE"].nil? then
+ 					File.open('.cookies.yml', 'w') { |file| file.write(ENV["FIREBASE_COOKIE"]) }
+ 				end
 
-				#Send
-				page = @agent.submit(google_form, google_form.buttons.first)
-				
-				#Second step - password
-				google_form = page.form()
-				google_form.Passwd = password
+ 				# Try to load cookie from file
+				begin
+					@agent.cookie_jar.load '.cookies.yml'
+					UI.message "Cookies found!"
 
-				#Send
-				page = @agent.submit(google_form, google_form.buttons.first)
+					page = @agent.get(@base_url)
+				rescue
+					UI.message "Cookies not found, trying to login"
+
+					page = @agent.get("#{@login_url}?passive=1209600&osid=1&continue=#{@base_url}/&followup=#{@base_url}/")
 				
+					#First step - email
+					google_form = page.form()
+					google_form.Email = email
+
+					#Send
+					page = @agent.submit(google_form, google_form.buttons.first)
+					
+					#Second step - password
+					google_form = page.form()
+					google_form.Passwd = password
+
+					#Send
+					page = @agent.submit(google_form, google_form.buttons.first)
+				end
+
 				while page do
 					if extract_api_key(page) then
 						UI.success "Successfuly logged in"
@@ -159,6 +175,7 @@ module Fastlane
 			end
 
 			def create_authorization_headers 
+				@agent.cookie_jar.save_as '.cookies.yml', :session => true, :format => :yaml
 				cookie = @agent.cookie_jar.jar["google.com"]["/"]["SAPISID"]
 				sapisid = cookie.value
 				origin = @base_url
@@ -179,6 +196,38 @@ module Fastlane
 				}
 
 				json_headers
+			end
+
+			def apikey_request_json(path, method = :get, parameters = Hash.new, headers = Hash.new, query = '')
+					begin
+					if method == :get then
+						parameters["key"] = @api_key
+						page = @agent.get("#{@apikey_url}#{path}", parameters, nil, headers.merge(@authorization_headers))
+					elsif method == :post then
+						headers['Content-Type'] = 'application/json'
+            puts "#{@apikey_url}#{path}?key=#{@api_key}"
+            puts parameters.to_json
+						page = @agent.post("#{@apikey_url}#{path}?key=#{@api_key}", parameters.to_json, headers.merge(@authorization_headers))
+					elsif method == :patch then
+						headers['Content-Type'] = 'application/json'
+						page = @agent.request_with_entity(
+              'patch', "#{@apikey_url}#{path}?key=#{@api_key}&#{query}", parameters.to_json, headers.merge(@authorization_headers)
+            )
+					elsif method == :delete then
+						page = @agent.delete("#{@apikey_url}#{path}?key=#{@api_key}", parameters, headers.merge(@authorization_headers))
+					end
+
+					JSON.parse(page.body)
+
+					rescue Mechanize::ResponseCodeError => e
+						code = e.response_code.to_i
+						if code >= 400 && code < 500 then
+							if body = JSON.parse(e.page.body) then
+								raise BadRequestError.new(body["error"]["message"], code)
+							end
+						end
+						UI.crash! e.page.body
+					end
 			end
 
 			def request_json(path, method = :get, parameters = Hash.new, headers = Hash.new)
@@ -216,7 +265,7 @@ module Fastlane
 
 			def add_client(project_number, type, bundle_id, app_name, ios_appstore_id )
 				parameters = {
-					"requestHeader" => { "clientVersion" => "FIREBASE" },
+					"requestHeader" => { },
 					"displayName" => app_name || ""
 				}
 
@@ -228,7 +277,8 @@ module Fastlane
 						}
 					when :android
 						parameters["androidData"] = {
-							"packageName" => bundle_id
+							"packageName" => bundle_id,
+							"androidCertificateHash" => []
 						}
 				end
 
@@ -259,6 +309,16 @@ module Fastlane
 				json = request_json("v1/projects/#{project_number}/clients/#{client_id}:setApnsCertificate", :post, parameters)
 			end
 
+			def upload_p8_certificate(project_number, client_id, type, certificate_value, key_code)
+
+				parameters = {
+						"keyId" => key_code,
+						"privateKey" => certificate_value 
+					}
+
+			  json = request_json("v1/projects/#{project_number}/clients/#{client_id}:setApnsAuthKey", :post, parameters)
+			end
+
 			def download_config_file(project_number, client_id)
 				
 				request = "[\"getArtifactRequest\",null,\"#{client_id}\",\"1\",\"#{project_number}\"]"
@@ -273,6 +333,53 @@ module Fastlane
 					UI.crash! e.page.body
 				end
 			end
+
+			def add_team(project_number, bundle_id, team_id)
+				parameters = {
+					"iosTeamId" => team_id
+				}
+
+				json = request_json("v1/projects/#{project_number}/clients/ios:#{bundle_id}:setTeamId", :post, parameters)
+			end
+
+			def add_android_certificate(project_number, bundle_id, sha256)
+				parameters = {
+					"requestHeader" => { "clientVersion" => "FIREBASE" },
+					"projectNumber" => project_number,
+					"clientId" => "android:#{bundle_id}",
+					"androidCertificate" => {
+						"androidSha256Hash" => sha256
+					}
+				}
+
+				json = request_json("v1/projects/#{project_number}/clients/android:#{bundle_id}:addAndroidCertificate", :post, parameters)
+			end
+
+			def add_apple_store_id(project_number, bundle_id, store_id)
+				parameters = {
+					"requestHeader" => { "clientVersion" => "FIREBASE" },
+					"projectNumber" => project_number,
+					"clientId" => "android:#{bundle_id}",
+					iosAppStoreId: store_id
+				}
+
+				json = request_json("v1/projects/#{project_number}/clients/ios:#{bundle_id}:setAppStoreId", :post, parameters)
+			end
+
+      def get_apikey(project_number, api_key)
+				json = apikey_request_json("v1/projects/#{project_number}/apiKeys/#{api_key}", :get)
+      end
+
+      def update_apikey(project_number, api_key, update_mask, payload)
+        json = apikey_request_json(
+          "v1/projects/#{project_number}/apiKeys/#{api_key}", :patch, payload, Hash.new, "updateMask=#{update_mask}"
+        )
+      end
+
+      def get_server_key(project_number) 
+				parameters = {}
+				json = request_json("v1/projects/#{project_number}:getIidTokens", :post, parameters)
+      end
 		end
 	end
 end

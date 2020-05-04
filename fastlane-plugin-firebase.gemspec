@@ -29,6 +29,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake'
   spec.add_development_dependency 'rubocop'
   spec.add_development_dependency 'fastlane', '>= 2.5.0'
-  spec.add_dependency 'mechanize'
+  spec.add_dependency 'mechanize', '2.7.6'
   
 end

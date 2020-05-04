@@ -1,6 +1,6 @@
 module Fastlane
   module Actions
-    class FirebaseAddClientAction < Action
+    class FirebaseAddAppleStoreIdAction < Action
       
       def self.run(params)
         manager = Firebase::Manager.new
@@ -17,32 +17,9 @@ module Fastlane
         name = params[:name]
         appstore_id = params[:appstore_id]
 
-        begin
-        # Add client
-        client = api.add_client(project["projectNumber"], type, bundle_id, name, appstore_id)
-        rescue Firebase::Api::BadRequestError => e 
-          if e.code == 409 then
-            client = project["clientSummary"].select { |client| client["clientId"] == "#{type}:#{bundle_id}" }.first
-            if client then
-              UI.success "Client already exists, skipping ..."
-            else
-              raise
-            end
-          else 
-            raise
-          end
-        end
+        client = api.add_apple_store_id(project["projectNumber"], bundle_id, appstore_id)
 
-
-        if params[:download_config] then
-          #Download config
-          config = api.download_config_file(project["projectNumber"], client["clientId"])
-          path = File.join(params[:output_path], params[:output_name] || config.filename)
-          config.save!(path)
-
-          UI.success "Successfuly saved config at #{path}"
-        end
-
+        UI.success "Successfuly added apple store id of app #{bundle_id}"
       end
 
       def self.description
@@ -86,11 +63,7 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :type,
                                   env_name: "FIREBASE_TYPE",
                                   description: "Type of client (ios, android)",
-                                  verify_block: proc do |value|
-                                    types = [:ios, :android]
-                                    UI.user_error!("Type must be in #{types}") unless types.include?(value.to_sym)
-                                  end
-                               ),
+                                  optional: true),
           FastlaneCore::ConfigItem.new(key: :bundle_id,
                                   env_name: "FIREBASE_BUNDLE_ID",
                                description: "Bundle ID (package name)",
@@ -102,7 +75,7 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :appstore_id,
                                   env_name: "FIREBASE_APPSTORE_ID",
                                description: "AppStore ID",
-                                  optional: true),
+                                  optional: false),
           FastlaneCore::ConfigItem.new(key: :output_path,
                                   env_name: "FIREBASE_OUTPUT_PATH",
                                description: "Path for the downloaded config",
